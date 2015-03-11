@@ -1,4 +1,4 @@
-Ansible VM 1.10
+Ansible VM 1.11
 ===============
 
 This virtual machine configuration is designed to have ONE application per machine. However, it does support multiple domains / sites per configuration. This virtual machine is a particularly good fit if you run Ubuntu 14.04 LTS on your servers.
@@ -12,7 +12,8 @@ This virtual machine configuration is designed to have ONE application per machi
 - [Redis](http://redis.io) _(optional)_
 - [R](http://r-project.org) _(optional)_
 - [Java](http://java.com) _(optional)_
-- [Scala](http://scala-lang.org) _(optional)_
+- [Typesafe Activator](http://scala-lang.org) _(optional)_
+- [EventStore](http://geteventstore.com) _(optional)_
 - Site configuration defined in the [Vagrantfile](https://github.com/heybigname/ansible/blob/master/Vagrantfile)
 - Database configuration defined in the [Vagrantfile](https://github.com/heybigname/ansible/blob/master/Vagrantfile)
 - Custom PHP.ini configurations can be defined in the [Vagrantfile](https://github.com/heybigname/ansible/blob/master/Vagrantfile)
@@ -50,8 +51,12 @@ install_gems: []
 install_r: "no"
 r_packages: []
 install_java: "no"
-install_scala: "no"
-scala_activator_version: "1.2.10"
+install_typesafe_activator: "no"
+typesafe_activator_version: "1.2.10"
+install_eventstore: "no",
+eventstore_version: "3.0.1",
+enable_swap: "no",
+swap_size_in_mb: "1024"
 ```
 
 # Example Vagrantfiles
@@ -98,13 +103,15 @@ Vagrant.configure("2") do |config|
             install_redis: "no",
             install_javascript_build_system: "no",
             install_r: "no",
+            enable_swap: "no",
+            swap_size_in_mb: "1024",
             r_packages: []
         }
     end
 end
 ```
 
-**Java / Scala**
+**Scala**
 
 ```ruby
 Vagrant.configure("2") do |config|
@@ -122,16 +129,49 @@ Vagrant.configure("2") do |config|
     config.vm.provision "ansible" do |ansible|
         ansible.playbook = "ansible/provision.yml"
         ansible.extra_vars = {
-            install_java: "yes",
-            install_scala: "yes"
+            install_typesafe_activator: "yes"
         }
     end
 end
 ```
 
+**EventStore**
+
+```ruby
+Vagrant.configure("2") do |config|
+    config.vm.box = "trusty64"
+    config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
+
+    config.vm.network :private_network, ip: "10.10.10.10"
+
+    config.vm.provider :virtualbox do |v|
+        v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        v.customize ["modifyvm", :id, "--memory", 1024]
+        v.customize ["modifyvm", :id, "--name", "CHANGE ME BEFORE USE"]
+    end
+
+    config.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/provision.yml"
+        ansible.extra_vars = {
+            bind_ip: "10.10.10.10",
+            install_eventstore: "yes",
+            install_eventstore_version: "3.0.1"
+        }
+    end
+end
+```
 
 Changelog
 =========
+
+**1.12**
+
+Added optional swap creation
+
+**1.11**
+
+Change Scala to Typesafe Activator
+Add EventStore 
 
 **1.10**
 
